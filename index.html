@@ -153,7 +153,6 @@ footer.foot .wrap{display:flex;justify-content:space-between;gap:12px;flex-wrap:
   nav.main a{font-size:11.5px;padding:7px 2px;text-align:center;flex:1;line-height:1.25}
   .chart .line{grid-template-columns:96px 1fr 50px;font-size:14px}
   .opt kbd{display:none}
-  .test-nav{position:sticky;bottom:64px;margin-top:12px;padding-top:10px;background:linear-gradient(rgba(255,255,255,0),#fff 35%)}
   .qcard .notice{font-size:13.5px;padding:8px 12px}
   .opt{padding:11px 14px}
   .pro{grid-template-columns:44px 1fr} .pro .n{width:44px;height:44px;font-size:19px;border-radius:14px}
@@ -299,7 +298,7 @@ V['about-test'] = () => `
         <li>Тест состоит из <b>${DATA.questions.length} утверждений</b> и <b>7–8 уточняющих</b> вопросов — примерно 10 минут.</li>
         <li>Оцени, насколько ты согласен с каждым утверждением, — от «совсем не согласен» до «полностью согласен».</li>
         <li>Отвечай честно и не думай долго: здесь нет правильных и неправильных ответов.</li>
-        <li>Ответ можно изменить кнопкой «Назад». Без ответа дальше перейти нельзя.</li>
+        <li>После выбора ответа тест сам переходит к следующему утверждению. Ответ можно изменить кнопкой «Назад». Без ответа дальше перейти нельзя.</li>
         <li>Ответы никуда не отправляются и не сохраняются — они видны только тебе.</li>
       </ol>
       <p class="notice">Это учебный тест, а не психологическая диагностика. Результат носит рекомендательный характер: он подсказывает, какие профессии стоит изучить подробнее, но не решает за тебя.</p>
@@ -474,7 +473,11 @@ function renderTest(focus) {
 }
 function bindTest() {
   if (!S.list.length) return;
-  document.querySelectorAll('.opt').forEach(b => b.onclick = () => answer(+b.dataset.v));
+  document.querySelectorAll('.opt').forEach(b => b.onclick = () => {
+    const key = S.list[S.i].key;
+    answer(+b.dataset.v);
+    setTimeout(() => { if (location.hash.startsWith('#/test') && S.list[S.i] && S.list[S.i].key === key) next(); }, 280);
+  });
   const n = document.getElementById('next'), bk = document.getElementById('back');
   if (n) n.onclick = next; if (bk) bk.onclick = back;
 }
