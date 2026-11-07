@@ -409,7 +409,7 @@ V.catalog = (params) => {
       <input class="search" id="q" type="search" placeholder="Найти профессию или направление…" aria-label="Поиск профессии">
       <div class="filters" role="group" aria-label="Фильтр по типу">
         <button class="filter ${type ? '' : 'on'}" data-t="">Все</button>
-        ${DATA.types.map(t => `<button class="filter ${type === t.id ? 'on' : ''}" data-t="${t.id}">${t.short}</button>`).join('')}
+        ${['tech', 'nature', 'human', 'sign', 'art'].map(id => DATA.types.find(t => t.id === id)).map(t => `<button class="filter ${type === t.id ? 'on' : ''}" data-t="${t.id}">${t.short}</button>`).join('')}
       </div>
     </div>
     <p class="small muted" id="count"></p>
@@ -418,9 +418,11 @@ V.catalog = (params) => {
 function catalogLogic(params) {
   const all = DATA.directions.flatMap(d => d.professions.map((p, pi) => ({ ...p, dir: d.name, did: d.id, pi, type: d.type, subjects: d.subjects })));
   let type = params.get('type') || '', q = '';
+  const shuf = all.slice();
+  for (let i = shuf.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [shuf[i], shuf[j]] = [shuf[j], shuf[i]]; }
   const draw = () => {
     const ql = q.trim().toLowerCase();
-    const items = all.filter(p => (!type || p.type === type) && (!ql || (p.name + ' ' + p.dir + ' ' + p.about).toLowerCase().includes(ql)));
+    const items = (type ? all : shuf).filter(p => (!type || p.type === type) && (!ql || (p.name + ' ' + p.dir + ' ' + p.about).toLowerCase().includes(ql)));
     document.getElementById('count').textContent = `Найдено: ${items.length}`;
     document.getElementById('cards').innerHTML = items.length ? items.map(p => `
       <a class="card pcard" href="#/profession?d=${p.did}&p=${p.pi}" style="--c:${COL[p.type]}"><div class="tag">${T[p.type].short} · ${esc(p.dir)}</div><h3 style="margin-top:6px">${esc(p.name)}</h3><p class="small">${esc(p.about)}</p><div class="subj">${p.subjects.map(s => `<span>${esc(s)}</span>`).join('')}</div><span class="more">Подробнее →</span></a>`).join('')
