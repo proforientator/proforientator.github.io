@@ -153,6 +153,9 @@ footer.foot .wrap{display:flex;justify-content:space-between;gap:12px;flex-wrap:
   nav.main a{font-size:11.5px;padding:7px 2px;text-align:center;flex:1;line-height:1.25}
   .chart .line{grid-template-columns:96px 1fr 50px;font-size:14px}
   .opt kbd{display:none}
+  .test-nav{position:sticky;bottom:64px;margin-top:12px;padding-top:10px;background:linear-gradient(rgba(255,255,255,0),#fff 35%)}
+  .qcard .notice{font-size:13.5px;padding:8px 12px}
+  .opt{padding:11px 14px}
   .pro{grid-template-columns:44px 1fr} .pro .n{width:44px;height:44px;font-size:19px;border-radius:14px}
   .res-hero h1{font-size:28px}
   footer.foot{padding-bottom:84px}
@@ -212,9 +215,10 @@ function scoreMain() {
   const high = P.filter(x => x.p >= 70).length;
   if (P[0].p < 50) kind = 'weak';
   else if (high >= 3) kind = 'wide';
+  else if (P[0].p - P[P.length - 1].p <= 10) kind = 'even';
   else if (P[0].p - P[1].p <= 10) kind = 'mixed';
   else kind = 'lead';
-  const focus = kind === 'weak' ? [] : (kind === 'lead' ? [P[0].id] : [P[0].id, P[1].id]);
+  const focus = (kind === 'weak' || kind === 'even') ? [] : (kind === 'lead' ? [P[0].id] : [P[0].id, P[1].id]);
   return { P, kind, focus };
 }
 
@@ -329,6 +333,7 @@ const KIND = {
   lead: ['Ведущий тип', r => `Сильнее всего у тебя выражен тип «${T[r.P[0].id].name}».`],
   mixed: ['Смешанный профиль', r => `У тебя почти одинаково выражены два типа: «${T[r.P[0].id].name}» и «${T[r.P[1].id].name}». Обрати внимание на профессии на их стыке.`],
   wide: ['Широкие интересы', r => `Высокий результат сразу у нескольких типов. Это значит, что тебе может подойти многое, — попробуй себя в разных направлениях на практике. Ниже — два самых сильных.`],
+  even: ['Интересы выражены ровно', r => `Все пять типов получили почти одинаковый результат. Это значит, что тебе может быть интересно многое или ты ещё не определился. Попробуй себя в разных занятиях и посмотри каталог профессий.`],
   weak: ['Интересы пока выражены неярко', r => `Ни один тип не набрал больше 50 %. Это нормально: интересы ещё формируются. Посмотри каталог профессий и вернись к тесту через некоторое время.`],
 };
 
@@ -337,7 +342,7 @@ V.result = () => {
   if (!r) return `<div class="test card empty"><h2>Результата пока нет</h2><p class="muted">Пройди тест — и здесь появятся твои направления и профессии.</p><a class="btn primary" href="#/about-test">Пройти тест</a></div>`;
   const [kname, ktext] = KIND[r.kind];
   const lead = T[r.P[0].id];
-  const chart = r.P.map((x, k) => `<div class="line ${k === 0 && r.kind !== 'weak' ? 'top' : ''}" style="--c:${HEXC[x.id]}"><span>${T[x.id].short}</span><div class="track"><div class="fill" data-w="${x.p}"></div></div><span class="val">${x.p} %</span></div>`).join('');
+  const chart = r.P.map((x, k) => `<div class="line ${k === 0 && r.kind !== 'weak' && r.kind !== 'even' ? 'top' : ''}" style="--c:${HEXC[x.id]}"><span>${T[x.id].short}</span><div class="track"><div class="fill" data-w="${x.p}"></div></div><span class="val">${x.p} %</span></div>`).join('');
   const focusTypes = r.focus.map(id => T[id]);
   const top3 = r.dirs.slice(0, 3), rest = r.dirs.slice(3);
   // топ-5 профессий: 2 из первого направления, 2 из второго, 1 из третьего
@@ -364,10 +369,10 @@ V.result = () => {
       <ul>${o.d.professions.map(p => `<li>${esc(p.name)}</li>`).join('')}</ul></div>`).join('');
   const restHtml = rest.map(o => `<div class="card mini" style="--c:${HEXC[o.d.type]}"><h3>${esc(o.d.name)}</h3><p class="small muted">${o.d.professions.map(p => esc(p.name)).join(' · ')}</p></div>`).join('');
   return `
-    <div class="res-hero" style="--c:${r.kind === 'weak' ? '#1b7f79' : HEXC[lead.id]}">
+    <div class="res-hero" style="--c:${(r.kind === 'weak' || r.kind === 'even') ? '#1b7f79' : HEXC[lead.id]}">
       <div>
         <span class="kind">${kname}</span>
-        <h1>${r.kind === 'weak' ? 'Твои интересы ещё формируются' : esc(lead.name)}</h1>
+        <h1>${r.kind === 'weak' ? 'Твои интересы ещё формируются' : r.kind === 'even' ? 'Тебе интересно многое' : esc(lead.name)}</h1>
         <p>${ktext(r)}</p>
         ${focusTypes.slice(0, 1).map(t => `<p>${esc(t.about)}</p>`).join('')}
       </div>
@@ -388,7 +393,7 @@ V.result = () => {
     <p class="notice" style="margin-top:22px">Результат носит рекомендательный характер и не является психологической диагностикой. Обсуди его с родителями, учителем или школьным психологом.</p>
     <div class="row no-print" style="margin-top:16px">
       <button class="btn primary" id="again">Пройти заново</button>
-      <a class="btn ghost" href="#/catalog?type=${r.kind === 'weak' ? '' : r.P[0].id}">Все профессии этого типа</a>
+      <a class="btn ghost" href="#/catalog?type=${(r.kind === 'weak' || r.kind === 'even') ? '' : r.P[0].id}">Все профессии этого типа</a>
       <button class="btn link" id="print">Распечатать результат</button>
     </div>`;
 };
